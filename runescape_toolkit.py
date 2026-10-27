@@ -1,8 +1,8 @@
-"""RS3 Buff Monitor v0.7.1 — dark UI and screen-based buff icon alerts."""
+"""RS3 Buff Monitor v0.7.2 — more tolerant icon matching."""
 import os, sys, json, time, threading, urllib.request, subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
-APP_VERSION = "0.7.1"
+APP_VERSION = "0.7.2"
 REPO_RAW = "https://raw.githubusercontent.com/oinlig/rs3-buff-tracker/main/"
 MANIFEST_URL = REPO_RAW + "version.json"
 DATA_DIR = os.path.join(os.path.expanduser("~"), ".runescape_toolkit")
@@ -223,13 +223,13 @@ class App(tk.Tk):
                 path=os.path.join(TEMPLATES,b.get("template",""))
                 if not b.get("template") or not os.path.isfile(path): out[n]="Missing template"; continue
                 templ=Image.open(path).convert("RGB"); tw,th=templ.size
-                best=0; stride=max(2,min(5,tw//8))
+                best=0; stride=max(1,min(3,tw//12))
                 if tw>im.width or th>im.height: out[n]="Invalid template"; continue
                 for y in range(0,im.height-th+1,stride):
                     for x in range(0,im.width-tw+1,stride):
                         score=self.similarity(templ,im.crop((x,y,x+tw,y+th)))
                         best=max(best,score)
-                found=best>=0.90; out[n]="Detected" if found else "Not detected"
+                found=best>=0.82; out[n]=("Detected ("+str(round(best*100))+"%)") if found else ("Not detected ("+str(round(best*100))+"%)")
                 if found:
                     self.seen.add(n); self.missing[n]=0; self.alerted.discard(n)
                 elif n in self.seen and b.get("enabled",True) and n not in self.alerted:
