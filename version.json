@@ -1,5 +1,5 @@
 {
-  "version": "0.7.0",
+  "version": "0.7.1",
   "script_url": "https://raw.githubusercontent.com/oinlig/rs3-buff-tracker/main/runescape_toolkit.py",
-  "notes": "Modern dark AURA interface, clearer layout, and explicit buff-name column fix."
+  "notes": "Renamed to RS3 Buff Monitor and fixed Windows updater command quoting."
 }
