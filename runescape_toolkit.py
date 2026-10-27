@@ -2,7 +2,7 @@
 import os, sys, json, time, threading, urllib.request, subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
-APP_VERSION = "0.6.0"
+APP_VERSION = "0.6.1"
 REPO_RAW = "https://raw.githubusercontent.com/oinlig/rs3-buff-tracker/main/"
 MANIFEST_URL = REPO_RAW + "version.json"
 DATA_DIR = os.path.join(os.path.expanduser("~"), ".runescape_toolkit")
@@ -31,6 +31,7 @@ class App(tk.Tk):
         super().__init__()
         self.title("RS3 Buff Tracker v" + APP_VERSION)
         self.geometry("920x650")
+        self.minsize(760, 560)
         self.region = None
         self.buffs = {}
         self.monitoring = False
@@ -48,7 +49,9 @@ class App(tk.Tk):
         ttk.Button(row,text="Select buff-bar region",command=self.select_region).pack(side="left")
         ttk.Button(row,text="Capture preview",command=self.capture).pack(side="left",padx=5)
         self.monitor_btn=ttk.Button(row,text="Start monitoring",command=self.toggle); self.monitor_btn.pack(side="left")
-        self.tree=ttk.Treeview(self,columns=("enabled","template","state"),show="headings",height=8)
+        self.tree=ttk.Treeview(self,columns=("enabled","template","state"),show="tree headings",height=8)
+        self.tree.heading("#0",text="Buff name")
+        self.tree.column("#0",width=300,minwidth=180,stretch=True)
         for c,t,w in [("enabled","Alert",80),("template","Icon template",180),("state","Recognition",160)]:
             self.tree.heading(c,text=t); self.tree.column(c,width=w,anchor="center")
         self.tree.pack(fill="x",padx=14,pady=8)
@@ -57,10 +60,12 @@ class App(tk.Tk):
         ttk.Button(row2,text="Select icon from preview",command=self.select_icon).pack(side="left",padx=5)
         ttk.Button(row2,text="Toggle alert",command=self.toggle_alert).pack(side="left")
         ttk.Button(row2,text="Remove buff",command=self.remove_buff).pack(side="right")
-        self.preview=ttk.Label(self,text="Select the buff-bar region, then capture a preview.",anchor="w")
+        self.preview=ttk.Label(self,text="The captured buff-bar region will appear here.",anchor="w")
         self.preview.pack(fill="both",expand=True,padx=14,pady=10)
         self.refresh()
         self.protocol("WM_DELETE_WINDOW",self.close)
+        if self.region:
+            self.after(350, self.capture)
 
     def load(self):
         try:
