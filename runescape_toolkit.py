@@ -2,9 +2,9 @@
 import os, sys, json, time, threading, urllib.request, subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
-APP_VERSION = "0.6.1"
+APP_VERSION = "0.6.2"
 REPO_RAW = "https://raw.githubusercontent.com/oinlig/rs3-buff-tracker/main/"
-MANIFEST_URL = REPO_RAW + "version.json"
+MANIFEST_URL = REPO_RAW + "version.json?cachebust=20261027"
 DATA_DIR = os.path.join(os.path.expanduser("~"), ".runescape_toolkit")
 CONFIG = os.path.join(DATA_DIR, "settings_v05.json")
 TEMPLATES = os.path.join(DATA_DIR, "buff_templates")
