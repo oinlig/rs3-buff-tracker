@@ -1,8 +1,8 @@
-"""AURA RS3 Buff Tracker v0.7.0 — modern dark UI and screen-based buff icon alerts."""
+"""RS3 Buff Monitor v0.7.1 — dark UI and screen-based buff icon alerts."""
 import os, sys, json, time, threading, urllib.request, subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
-APP_VERSION = "0.7.0"
+APP_VERSION = "0.7.1"
 REPO_RAW = "https://raw.githubusercontent.com/oinlig/rs3-buff-tracker/main/"
 MANIFEST_URL = REPO_RAW + "version.json"
 DATA_DIR = os.path.join(os.path.expanduser("~"), ".runescape_toolkit")
@@ -29,7 +29,7 @@ def ver(v):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("AURA // RS3 Buff Tracker")
+        self.title("RS3 Buff Monitor")
         self.geometry("1060x760")
         self.minsize(860, 650)
         self.configure(bg="#0b1020")
@@ -69,9 +69,9 @@ class App(tk.Tk):
         # Header
         top = ttk.Frame(self, padding=(26, 22, 26, 14)); top.pack(fill="x")
         brand = ttk.Frame(top); brand.pack(side="left", fill="x", expand=True)
-        ttk.Label(brand, text="A U R A   / /   R U N E S C A P E  3", style="Eyebrow.TLabel").pack(anchor="w")
-        ttk.Label(brand, text="Buff Tracker", style="Hero.TLabel").pack(anchor="w", pady=(4, 0))
-        ttk.Label(brand, text="VISUAL BUFF MONITOR  •  AUDIO ALERTS", foreground=self.colors["muted"]).pack(anchor="w", pady=(4, 0))
+        ttk.Label(brand, text="RUNESCAPE 3  /  DESKTOP TOOL", style="Eyebrow.TLabel").pack(anchor="w")
+        ttk.Label(brand, text="Buff Monitor", style="Hero.TLabel").pack(anchor="w", pady=(4, 0))
+        ttk.Label(brand, text="BUFF STATUS  •  VISUAL MONITORING  •  AUDIO ALERTS", foreground=self.colors["muted"]).pack(anchor="w", pady=(4, 0))
         ttk.Button(top, text="Check for updates", command=self.check_updates).pack(side="right", padx=(8, 0), pady=10)
         ttk.Button(top, text="Test sound  ♪", command=sound).pack(side="right", pady=10)
 
@@ -279,9 +279,17 @@ class App(tk.Tk):
             staged=os.path.abspath(__file__)+".update"
             with open(staged,"wb") as f: f.write(code)
             updater=os.path.join(os.path.dirname(os.path.abspath(__file__)),"apply_update.bat")
-            with open(updater,"w",encoding="utf-8") as f:
-                f.write('@echo off\r\nsetlocal\r\ntimeout /t 2 /nobreak >nul\r\ncopy /y "%~1" "%~2" >nul\r\nif errorlevel 1 (echo Update failed. & pause & exit /b 1)\r\ndel "%~1"\r\nstart "" "%~3"\r\n')
             script=os.path.abspath(__file__); bat=os.path.join(os.path.dirname(script),"run_toolkit.bat")
+            # Put quoted paths directly into the batch file instead of passing
+            # several nested quoted arguments through cmd.exe's START command.
+            def q(path):
+                return '"' + os.path.abspath(path).replace('"','') + '"'
+            with open(updater,"w",encoding="utf-8") as f:
+                f.write('@echo off\r\nsetlocal\r\ntimeout /t 2 /nobreak >nul\r\n')
+                f.write('copy /y ' + q(staged) + ' ' + q(script) + ' >nul\r\n')
+                f.write('if errorlevel 1 (echo Update failed. Could not replace the script. & pause & exit /b 1)\r\n')
+                f.write('del ' + q(staged) + ' >nul 2>nul\r\n')
+                f.write('start "" ' + q(bat) + '\r\n')
             self.after(0,lambda:self.start_update(latest,staged,script,updater,bat))
         except Exception as e:
             self.after(0,lambda err=str(e):(self.status.set("Update failed"),messagebox.showerror("Update failed","Current version was not changed.\n\n"+err,parent=self)))
@@ -292,8 +300,8 @@ class App(tk.Tk):
             except OSError: pass
             return
         try:
-            # Quote each batch argument so folders containing spaces work.
-            subprocess.Popen('start "" "'+updater+'" "'+staged+'" "'+script+'" "'+bat+'"',shell=True,cwd=os.path.dirname(script))
+            # Launch the updater batch directly; it contains its own quoted paths.
+            subprocess.Popen(["cmd.exe", "/c", "start", "", updater], cwd=os.path.dirname(script), shell=False)
             self.close()
         except Exception as e: messagebox.showerror("Updater error",str(e),parent=self)
 
