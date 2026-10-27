@@ -1,8 +1,8 @@
-"""RS3 Buff Tracker v0.6.0 — screen-based buff icon alerts and GitHub updater."""
+"""AURA RS3 Buff Tracker v0.7.0 — modern dark UI and screen-based buff icon alerts."""
 import os, sys, json, time, threading, urllib.request, subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
-APP_VERSION = "0.6.3"
+APP_VERSION = "0.7.0"
 REPO_RAW = "https://raw.githubusercontent.com/oinlig/rs3-buff-tracker/main/"
 MANIFEST_URL = REPO_RAW + "version.json"
 DATA_DIR = os.path.join(os.path.expanduser("~"), ".runescape_toolkit")
@@ -29,9 +29,10 @@ def ver(v):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("RS3 Buff Tracker v" + APP_VERSION)
-        self.geometry("920x650")
-        self.minsize(760, 560)
+        self.title("AURA // RS3 Buff Tracker")
+        self.geometry("1060x760")
+        self.minsize(860, 650)
+        self.configure(bg="#0b1020")
         self.region = None
         self.buffs = {}
         self.monitoring = False
@@ -39,31 +40,77 @@ class App(tk.Tk):
         self.missing = {}
         self.alerted = set()
         self.load()
-        top = ttk.Frame(self, padding=12); top.pack(fill="x")
-        ttk.Label(top, text="RuneScape 3 Buff Tracker", font=("Segoe UI", 18, "bold")).pack(side="left")
-        ttk.Button(top, text="Check for updates", command=self.check_updates).pack(side="right")
-        ttk.Button(top, text="Test sound", command=sound).pack(side="right", padx=6)
-        self.status = tk.StringVar(value="Ready")
-        ttk.Label(self, textvariable=self.status).pack(anchor="w", padx=14, pady=(0,8))
-        row=ttk.Frame(self,padding=10); row.pack(fill="x")
-        ttk.Button(row,text="Select buff-bar region",command=self.select_region).pack(side="left")
-        ttk.Button(row,text="Capture preview",command=self.capture).pack(side="left",padx=5)
-        self.monitor_btn=ttk.Button(row,text="Start monitoring",command=self.toggle); self.monitor_btn.pack(side="left")
-        self.tree=ttk.Treeview(self,columns=("enabled","template","state"),show="tree headings",height=8)
-        self.tree.heading("#0",text="Buff name")
-        self.tree.column("#0",width=300,minwidth=180,stretch=True)
-        for c,t,w in [("enabled","Alert",80),("template","Icon template",180),("state","Recognition",160)]:
-            self.tree.heading(c,text=t); self.tree.column(c,width=w,anchor="center")
-        self.tree.pack(fill="x",padx=14,pady=8)
-        row2=ttk.Frame(self,padding=10); row2.pack(fill="x")
-        ttk.Button(row2,text="Add buff",command=self.add_buff).pack(side="left")
-        ttk.Button(row2,text="Select icon from preview",command=self.select_icon).pack(side="left",padx=5)
-        ttk.Button(row2,text="Toggle alert",command=self.toggle_alert).pack(side="left")
-        ttk.Button(row2,text="Remove buff",command=self.remove_buff).pack(side="right")
-        self.preview=ttk.Label(self,text="The captured buff-bar region will appear here.",anchor="w")
-        self.preview.pack(fill="both",expand=True,padx=14,pady=10)
+
+        # Custom dark interface: navy surfaces, crisp typography, teal accent.
+        style = ttk.Style(self)
+        try: style.theme_use("clam")
+        except tk.TclError: pass
+        self.colors = {"bg":"#0b1020", "panel":"#121a2b", "panel2":"#172238",
+                       "text":"#eef4ff", "muted":"#93a4c4", "accent":"#48e0c1",
+                       "accent_dark":"#163e43", "line":"#26344d", "selected":"#24465a"}
+        self.option_add("*Font", ("Segoe UI", 10))
+        style.configure(".", background=self.colors["bg"], foreground=self.colors["text"], font=("Segoe UI", 10))
+        style.configure("TFrame", background=self.colors["bg"])
+        style.configure("Panel.TFrame", background=self.colors["panel"])
+        style.configure("TLabel", background=self.colors["bg"], foreground=self.colors["text"])
+        style.configure("Muted.TLabel", background=self.colors["panel"], foreground=self.colors["muted"])
+        style.configure("Hero.TLabel", background=self.colors["bg"], foreground=self.colors["text"], font=("Segoe UI", 23, "bold"))
+        style.configure("Eyebrow.TLabel", background=self.colors["bg"], foreground=self.colors["accent"], font=("Segoe UI", 9, "bold"))
+        style.configure("Status.TLabel", background=self.colors["panel"], foreground=self.colors["accent"], font=("Segoe UI", 10, "bold"), padding=(12, 10))
+        style.configure("TButton", background=self.colors["panel2"], foreground=self.colors["text"], bordercolor=self.colors["line"], padding=(13, 9), relief="flat")
+        style.map("TButton", background=[("active", "#24324c"), ("pressed", self.colors["accent_dark"])], foreground=[("active", self.colors["accent"])])
+        style.configure("Accent.TButton", background=self.colors["accent"], foreground="#07131d", padding=(15, 10), font=("Segoe UI", 10, "bold"), borderwidth=0)
+        style.map("Accent.TButton", background=[("active", "#7af4dc"), ("pressed", "#31bfa5")], foreground=[("active", "#07131d")])
+        style.configure("Treeview", background=self.colors["panel"], fieldbackground=self.colors["panel"], foreground=self.colors["text"], rowheight=36, borderwidth=0, font=("Segoe UI", 10))
+        style.configure("Treeview.Heading", background=self.colors["panel2"], foreground=self.colors["muted"], font=("Segoe UI", 9, "bold"), padding=(10, 11), relief="flat")
+        style.map("Treeview", background=[("selected", self.colors["selected"])], foreground=[("selected", "#ffffff")])
+        style.configure("TSeparator", background=self.colors["line"])
+
+        # Header
+        top = ttk.Frame(self, padding=(26, 22, 26, 14)); top.pack(fill="x")
+        brand = ttk.Frame(top); brand.pack(side="left", fill="x", expand=True)
+        ttk.Label(brand, text="A U R A   / /   R U N E S C A P E  3", style="Eyebrow.TLabel").pack(anchor="w")
+        ttk.Label(brand, text="Buff Tracker", style="Hero.TLabel").pack(anchor="w", pady=(4, 0))
+        ttk.Label(brand, text="VISUAL BUFF MONITOR  •  AUDIO ALERTS", foreground=self.colors["muted"]).pack(anchor="w", pady=(4, 0))
+        ttk.Button(top, text="Check for updates", command=self.check_updates).pack(side="right", padx=(8, 0), pady=10)
+        ttk.Button(top, text="Test sound  ♪", command=sound).pack(side="right", pady=10)
+
+        self.status = tk.StringVar(value="●  READY  —  Select your buff-bar region to begin")
+        statusbar = ttk.Frame(self, style="Panel.TFrame", padding=(8, 0)); statusbar.pack(fill="x", padx=26, pady=(0, 16))
+        ttk.Label(statusbar, textvariable=self.status, style="Status.TLabel").pack(fill="x")
+
+        # Setup controls
+        setup = ttk.Frame(self, style="Panel.TFrame", padding=16); setup.pack(fill="x", padx=26, pady=(0, 14))
+        ttk.Label(setup, text="01  /  CAPTURE SETUP", style="Muted.TLabel").pack(anchor="w", pady=(0, 12))
+        actions = ttk.Frame(setup, style="Panel.TFrame"); actions.pack(fill="x")
+        ttk.Button(actions, text="Select buff-bar region", command=self.select_region, style="Accent.TButton").pack(side="left")
+        ttk.Button(actions, text="Refresh preview", command=self.capture).pack(side="left", padx=8)
+        self.monitor_btn = ttk.Button(actions, text="▶  Start monitoring", command=self.toggle)
+        self.monitor_btn.pack(side="right")
+
+        # Buff list
+        listing = ttk.Frame(self, style="Panel.TFrame", padding=16); listing.pack(fill="x", padx=26, pady=(0, 14))
+        ttk.Label(listing, text="02  /  YOUR BUFFS", style="Muted.TLabel").pack(anchor="w", pady=(0, 10))
+        self.tree = ttk.Treeview(listing, columns=("enabled","template","state"), show="tree headings", height=5)
+        self.tree.heading("#0", text="BUFF NAME")
+        self.tree.column("#0", width=300, minwidth=180, stretch=True)
+        for col, heading, width in [("enabled","ALERT",90),("template","ICON TEMPLATE",190),("state","RECOGNITION",190)]:
+            self.tree.heading(col, text=heading)
+            self.tree.column(col, width=width, anchor="center")
+        self.tree.pack(fill="x", expand=True)
+        row2 = ttk.Frame(listing, style="Panel.TFrame"); row2.pack(fill="x", pady=(12, 0))
+        ttk.Button(row2, text="+  Add buff", command=self.add_buff, style="Accent.TButton").pack(side="left")
+        ttk.Button(row2, text="Select icon from preview", command=self.select_icon).pack(side="left", padx=8)
+        ttk.Button(row2, text="Toggle alert", command=self.toggle_alert).pack(side="left")
+        ttk.Button(row2, text="Remove buff", command=self.remove_buff).pack(side="right")
+
+        # Preview area
+        preview_panel = ttk.Frame(self, style="Panel.TFrame", padding=16); preview_panel.pack(fill="both", expand=True, padx=26, pady=(0, 22))
+        ttk.Label(preview_panel, text="03  /  LIVE REGION PREVIEW", style="Muted.TLabel").pack(anchor="w", pady=(0, 10))
+        self.preview = ttk.Label(preview_panel, text="No capture yet. Select your buff-bar region, then refresh the preview.", anchor="center", justify="center", padding=18, style="Muted.TLabel")
+        self.preview.pack(fill="both", expand=True)
         self.refresh()
-        self.protocol("WM_DELETE_WINDOW",self.close)
+        self.protocol("WM_DELETE_WINDOW", self.close)
         if self.region:
             self.after(350, self.capture)
 
@@ -81,7 +128,7 @@ class App(tk.Tk):
         for i in self.tree.get_children(): self.tree.delete(i)
         for n,b in self.buffs.items():
             ok=bool(b.get("template")) and os.path.isfile(os.path.join(TEMPLATES,b.get("template","")))
-            self.tree.insert("","end",iid=n,values=("On" if b.get("enabled",True) else "Off","Ready" if ok else "Missing",b.get("state","Not scanned")))
+            self.tree.insert("","end",iid=n,text=n,values=("ON" if b.get("enabled",True) else "OFF","READY" if ok else "MISSING",b.get("state","Not scanned")))
 
     def selected(self):
         s=self.tree.selection()
@@ -205,8 +252,8 @@ class App(tk.Tk):
         if not PIL_OK: return messagebox.showerror("Pillow needed","Run run_toolkit.bat.")
         if not self.region: return messagebox.showinfo("Select region","Select the buff-bar region first.")
         self.monitoring=not self.monitoring
-        self.monitor_btn.configure(text="Stop monitoring" if self.monitoring else "Start monitoring")
-        self.status.set("Monitoring screen region" if self.monitoring else "Monitoring stopped")
+        self.monitor_btn.configure(text="■  Stop monitoring" if self.monitoring else "▶  Start monitoring")
+        self.status.set("●  MONITORING  —  Scanning your buff bar" if self.monitoring else "●  READY  —  Monitoring stopped")
         if self.monitoring: self.loop()
 
     def loop(self):
