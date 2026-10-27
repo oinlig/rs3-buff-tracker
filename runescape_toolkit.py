@@ -2,7 +2,7 @@
 import os, sys, json, time, threading, urllib.request, subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
-APP_VERSION = "0.7.3"
+APP_VERSION = "0.7.4"
 REPO_RAW = "https://raw.githubusercontent.com/oinlig/rs3-buff-tracker/main/"
 MANIFEST_URL = REPO_RAW + "version.json"
 DATA_DIR = os.path.join(os.path.expanduser("~"), ".runescape_toolkit")
@@ -200,7 +200,11 @@ class App(tk.Tk):
             box=(int(x1*sx),int(y1*sy),int(x2*sx),int(y2*sy))
             if box[2]-box[0]<8 or box[3]-box[1]<8: return messagebox.showerror("Selection too small","Select a larger box.",parent=win)
             fn="icon_"+str(abs(hash(n)))+".png"; orig.crop(box).save(os.path.join(TEMPLATES,fn))
-            self.buffs[n]["template"]=fn; self.save(); self.refresh(); win.destroy()
+            self.buffs[n]["template"]=fn
+            # Remember where the icon was selected inside the buff-bar region.
+            # Scanning stays near this position instead of matching random screen patches.
+            self.buffs[n]["position"]=[box[0],box[1]]
+            self.save(); self.refresh(); win.destroy()
         ttk.Button(win,text="Save selected icon",command=save).pack(anchor="w",padx=8,pady=8)
 
     def toggle_alert(self):
@@ -227,13 +231,27 @@ class App(tk.Tk):
                 path=os.path.join(TEMPLATES,b.get("template",""))
                 if not b.get("template") or not os.path.isfile(path): out[n]="Missing template"; continue
                 templ=Image.open(path).convert("RGB"); tw,th=templ.size
-                best=0; stride=max(1,min(3,tw//12))
                 if tw>im.width or th>im.height: out[n]="Invalid template"; continue
-                for y in range(0,im.height-th+1,stride):
-                    for x in range(0,im.width-tw+1,stride):
+
+                # The icon's position is saved when the user selects its template.
+                # Search only a small area around that position to avoid false matches
+                # elsewhere in the buff bar or scenery.
+                pos=b.get("position")
+                if not isinstance(pos,(list,tuple)) or len(pos)!=2:
+                    out[n]="Reselect icon (position needed)"
+                    continue
+                px,py=int(pos[0]),int(pos[1])
+                radius=max(4,min(10,tw//5,th//5))
+                x0=max(0,px-radius); y0=max(0,py-radius)
+                x1=min(im.width-tw,px+radius); y1=min(im.height-th,py+radius)
+                best=0
+                stride=max(1,min(2,tw//16))
+                for y in range(y0,y1+1,stride):
+                    for x in range(x0,x1+1,stride):
                         score=self.similarity(templ,im.crop((x,y,x+tw,y+th)))
                         best=max(best,score)
-                found=best>=0.76; out[n]=("Detected ("+str(round(best*100))+"%)") if found else ("Not detected ("+str(round(best*100))+"%)")
+                found=best>=0.80
+                out[n]=("Detected ("+str(round(best*100))+"%)") if found else ("Not detected ("+str(round(best*100))+"%)")
                 if found:
                     self.seen.add(n); self.missing[n]=0; self.alerted.discard(n)
                 elif n in self.seen and b.get("enabled",True) and n not in self.alerted:
