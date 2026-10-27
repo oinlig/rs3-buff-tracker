@@ -1,5 +1,5 @@
 {
-  "version": "0.6.3",
+  "version": "0.7.0",
   "script_url": "https://raw.githubusercontent.com/oinlig/rs3-buff-tracker/main/runescape_toolkit.py",
-  "notes": "Use a fresh version-manifest URL on each update check to avoid stale cache responses."
+  "notes": "Modern dark AURA interface, clearer layout, and explicit buff-name column fix."
 }
