@@ -2,9 +2,9 @@
 import os, sys, json, time, threading, urllib.request, subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
-APP_VERSION = "0.6.2"
+APP_VERSION = "0.6.3"
 REPO_RAW = "https://raw.githubusercontent.com/oinlig/rs3-buff-tracker/main/"
-MANIFEST_URL = REPO_RAW + "version.json?cachebust=20261027"
+MANIFEST_URL = REPO_RAW + "version.json"
 DATA_DIR = os.path.join(os.path.expanduser("~"), ".runescape_toolkit")
 CONFIG = os.path.join(DATA_DIR, "settings_v05.json")
 TEMPLATES = os.path.join(DATA_DIR, "buff_templates")
@@ -220,7 +220,7 @@ class App(tk.Tk):
 
     def update_worker(self):
         try:
-            req=urllib.request.Request(MANIFEST_URL,headers={"User-Agent":"RS3-Buff-Tracker"})
+            req=urllib.request.Request(MANIFEST_URL + "?t=" + str(int(time.time())),headers={"User-Agent":"RS3-Buff-Tracker","Cache-Control":"no-cache","Pragma":"no-cache"})
             with urllib.request.urlopen(req,timeout=12) as r: m=json.loads(r.read().decode("utf-8"))
             latest=str(m["version"]); url=m["script_url"]
             if not url.startswith(REPO_RAW): raise ValueError("Manifest script URL is not trusted.")
