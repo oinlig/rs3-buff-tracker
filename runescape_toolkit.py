@@ -1,8 +1,8 @@
-"""RS3 Buff Monitor v0.7.2 — more tolerant icon matching."""
+"""RS3 Buff Monitor v0.7.3 — edge-based matching to reduce background sensitivity."""
 import os, sys, json, time, threading, urllib.request, subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
-APP_VERSION = "0.7.2"
+APP_VERSION = "0.7.3"
 REPO_RAW = "https://raw.githubusercontent.com/oinlig/rs3-buff-tracker/main/"
 MANIFEST_URL = REPO_RAW + "version.json"
 DATA_DIR = os.path.join(os.path.expanduser("~"), ".runescape_toolkit")
@@ -10,7 +10,7 @@ CONFIG = os.path.join(DATA_DIR, "settings_v05.json")
 TEMPLATES = os.path.join(DATA_DIR, "buff_templates")
 os.makedirs(TEMPLATES, exist_ok=True)
 try:
-    from PIL import Image, ImageGrab, ImageTk, ImageChops, ImageStat
+    from PIL import Image, ImageGrab, ImageTk, ImageChops, ImageStat, ImageFilter
     PIL_OK = True
 except ImportError:
     PIL_OK = False
@@ -213,7 +213,11 @@ class App(tk.Tk):
             self.buffs.pop(n,None); self.save(); self.refresh()
 
     def similarity(self,a,b):
-        b=b.resize(a.size).convert("L"); a=a.convert("L")
+        # Compare edge structure instead of raw pixel colors. This makes the
+        # match less sensitive to changing scenery/background colors behind
+        # the buff, while still comparing the icon's shape and detail.
+        b=b.resize(a.size).convert("L").filter(ImageFilter.FIND_EDGES)
+        a=a.convert("L").filter(ImageFilter.FIND_EDGES)
         return max(0,1-ImageStat.Stat(ImageChops.difference(a,b)).mean[0]/255)
 
     def scan(self):
@@ -229,7 +233,7 @@ class App(tk.Tk):
                     for x in range(0,im.width-tw+1,stride):
                         score=self.similarity(templ,im.crop((x,y,x+tw,y+th)))
                         best=max(best,score)
-                found=best>=0.82; out[n]=("Detected ("+str(round(best*100))+"%)") if found else ("Not detected ("+str(round(best*100))+"%)")
+                found=best>=0.76; out[n]=("Detected ("+str(round(best*100))+"%)") if found else ("Not detected ("+str(round(best*100))+"%)")
                 if found:
                     self.seen.add(n); self.missing[n]=0; self.alerted.discard(n)
                 elif n in self.seen and b.get("enabled",True) and n not in self.alerted:
