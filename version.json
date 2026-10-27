@@ -1,5 +1,5 @@
 {
-  "version": "0.7.3",
+  "version": "0.7.4",
   "script_url": "https://raw.githubusercontent.com/oinlig/rs3-buff-tracker/main/runescape_toolkit.py",
-  "notes": "Icon recognition compares edge structure to reduce sensitivity to changing background colors."
+  "notes": "Matches buff icons near their selected screen position to reduce false positives."
 }
