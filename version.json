@@ -1,5 +1,5 @@
 {
-  "version": "0.7.2",
+  "version": "0.7.3",
   "script_url": "https://raw.githubusercontent.com/oinlig/rs3-buff-tracker/main/runescape_toolkit.py",
-  "notes": "More tolerant icon matching, finer scan steps, and recognition confidence percentage."
+  "notes": "Icon recognition compares edge structure to reduce sensitivity to changing background colors."
 }
