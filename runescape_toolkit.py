@@ -6,7 +6,7 @@ APP_VERSION = "0.6.0"
 REPO_RAW = "https://raw.githubusercontent.com/oinlig/rs3-buff-tracker/main/"
 MANIFEST_URL = REPO_RAW + "version.json"
 DATA_DIR = os.path.join(os.path.expanduser("~"), ".runescape_toolkit")
-CONFIG = os.path.join(DATA_DIR, "settings.json")
+CONFIG = os.path.join(DATA_DIR, "settings_v05.json")
 TEMPLATES = os.path.join(DATA_DIR, "buff_templates")
 os.makedirs(TEMPLATES, exist_ok=True)
 try:
