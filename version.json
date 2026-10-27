@@ -1,5 +1,5 @@
 {
-  "version": "0.6.0",
+  "version": "0.6.1",
   "script_url": "https://raw.githubusercontent.com/oinlig/rs3-buff-tracker/main/runescape_toolkit.py",
-  "notes": "First version with GitHub update checking."
+  "notes": "Fix buff names in the list and automatically restore the saved region preview."
 }
